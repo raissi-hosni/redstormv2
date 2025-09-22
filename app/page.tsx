@@ -16,61 +16,61 @@ export default function Dashboard() {
   const [isRunning, setIsRunning] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const websocket = new WebSocketManager();
+useEffect(() => {
+  loadInitialData();
 
-  useEffect(() => {
-    // Load initial data
-    loadInitialData();
-    
-    // Connect to WebSocket
-    const socket = websocket.connect('dashboard_client');
-    
-    socket.on('connect', () => {
-      setIsConnected(true);
-      console.log('🟢 Connected to backend');
-    });
+  const ws = websocket.connect('dashboard_client');
 
-    socket.on('disconnect', () => {
-      setIsConnected(false);
-      console.log('🔴 Disconnected from backend');
-    });
+  ws.onopen = () => {
+    setIsConnected(true);
+    console.log('🟢 Connected to backend');
+  };
 
-    socket.on('agent_update', (data) => {
-      setRealTimeData(prev => [...prev, { ...data, timestamp: Date.now() }]);
-    });
+  ws.onclose = () => {
+    setIsConnected(false);
+    console.log('🔴 Disconnected from backend');
+  };
 
-    socket.on('phase_started', (data) => {
-      setCurrentPhase(data.phase);
-      setRealTimeData(prev => [...prev, { type: 'phase_started', ...data, timestamp: Date.now() }]);
-    });
+  ws.onmessage = ({ data }) => {
+    const msg = JSON.parse(data);
 
-    socket.on('phase_completed', (data) => {
-      setRealTimeData(prev => [...prev, { type: 'phase_completed', ...data, timestamp: Date.now() }]);
-      if (data.phase === 'exploitation') {
+    switch (msg.type) {
+      case 'agent_update':
+        setRealTimeData(prev => [...prev, { ...msg, timestamp: Date.now() }]);
+        break;
+      case 'phase_started':
+        setCurrentPhase(msg.phase);
+        setRealTimeData(prev => [...prev, { type: 'phase_started', ...msg, timestamp: Date.now() }]);
+        break;
+      case 'phase_completed':
+        setRealTimeData(prev => [...prev, { type: 'phase_completed', ...msg, timestamp: Date.now() }]);
+        if (msg.phase === 'exploitation') {
+          setIsRunning(false);
+          setCurrentPhase('completed');
+        }
+        break;
+      case 'vulnerability_found':
+        setRealTimeData(prev => [...prev, { type: 'vulnerability', ...msg, timestamp: Date.now() }]);
+        break;
+      case 'assessment_completed':
         setIsRunning(false);
         setCurrentPhase('completed');
-      }
-    });
+        setRealTimeData(prev => [...prev, { type: 'assessment_completed', ...msg, timestamp: Date.now() }]);
+        break;
+      case 'assessment_error':
+        setIsRunning(false);
+        setCurrentPhase('error');
+        setRealTimeData(prev => [...prev, { type: 'error', ...msg, timestamp: Date.now() }]);
+        break;
+      default:
+        console.warn('Unknown message type', msg.type);
+    }
+  };
 
-    socket.on('vulnerability_found', (data) => {
-      setRealTimeData(prev => [...prev, { type: 'vulnerability', ...data, timestamp: Date.now() }]);
-    });
+  ws.onerror = (err) => console.error('WS error', err);
 
-    socket.on('assessment_completed', (data) => {
-      setIsRunning(false);
-      setCurrentPhase('completed');
-      setRealTimeData(prev => [...prev, { type: 'assessment_completed', ...data, timestamp: Date.now() }]);
-    });
-
-    socket.on('assessment_error', (data) => {
-      setIsRunning(false);
-      setCurrentPhase('error');
-      setRealTimeData(prev => [...prev, { type: 'error', ...data, timestamp: Date.now() }]);
-    });
-
-    return () => {
-      websocket.disconnect();
-    };
-  }, []);
+  return () => websocket.disconnect();
+}, []);
 
   const loadInitialData = async () => {
     try {

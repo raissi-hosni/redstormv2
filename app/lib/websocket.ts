@@ -1,39 +1,21 @@
-import { io, Socket } from 'socket.io-client';
-
 export class WebSocketManager {
-  private socket: Socket | null = null;
-  private url: string;
+  private ws: WebSocket | null = null;
 
-  constructor(url: string = 'ws://localhost:8000') {
-    this.url = url;
+  /* open the native WS the server already provides */
+  connect(clientId: string): WebSocket {
+    this.ws = new WebSocket(`ws://localhost:8000/ws/${clientId}`);
+    return this.ws;
   }
 
-  connect(clientId: string) {
-    this.socket = io(this.url, {
-      transports: ['websocket'],
-      query: { clientId }
-    });
-
-    return this.socket;
+  /* send JSON messages */
+  emit(event: string, payload: any) {
+    this.ws?.send(JSON.stringify({ type: event, ...payload }));
   }
 
+  /* tidy-up */
   disconnect() {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
-  }
-
-  on(event: string, callback: (data: any) => void) {
-    if (this.socket) {
-      this.socket.on(event, callback);
-    }
-  }
-
-  emit(event: string, data: any) {
-    if (this.socket) {
-      this.socket.emit(event, data);
-    }
+    this.ws?.close();
+    this.ws = null;
   }
 }
 
