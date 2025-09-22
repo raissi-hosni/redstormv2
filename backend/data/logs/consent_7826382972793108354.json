@@ -1,0 +1,15 @@
+{
+  "target": "onetech-group.com",
+  "validation_result": {
+    "valid": false,
+    "missing_fields": [
+      "target_ownership"
+    ],
+    "warnings": [
+      "Target ownership not confirmed - assessment may be unauthorized"
+    ],
+    "consent_id": null
+  },
+  "consent_details": {},
+  "timestamp": "2025-09-22T07:34:19.513877"
+}

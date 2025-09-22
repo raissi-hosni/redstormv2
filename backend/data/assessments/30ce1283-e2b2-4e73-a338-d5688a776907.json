@@ -1,0 +1,18 @@
+{
+  "client_id": "api_client",
+  "target": "test.example.com",
+  "status": "created",
+  "start_time": null,
+  "phases": [
+    "reconnaissance",
+    "scanning",
+    "vulnerability"
+  ],
+  "config": {
+    "timeout": 300,
+    "intensity": "medium"
+  },
+  "assessment_id": "30ce1283-e2b2-4e73-a338-d5688a776907",
+  "created_at": "2025-09-22T07:21:06.357312",
+  "updated_at": "2025-09-22T07:21:06.357325"
+}

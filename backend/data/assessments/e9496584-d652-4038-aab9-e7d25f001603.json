@@ -1,0 +1,38 @@
+{
+  "client_id": "api_client",
+  "target": "scanme.nmap.org",
+  "status": "created",
+  "start_time": null,
+  "phases": [
+    "reconnaissance",
+    "scanning",
+    "vulnerability",
+    "exploitation"
+  ],
+  "config": {
+    "timeout": 600,
+    "intensity": "medium",
+    "reconnaissance": {
+      "subdomain_enum": true,
+      "tech_detection": true,
+      "whois_lookup": true
+    },
+    "scanning": {
+      "port_scan": true,
+      "service_detection": true,
+      "ssl_analysis": true
+    },
+    "vulnerability": {
+      "cve_lookup": true,
+      "service_checks": true,
+      "web_scan": true
+    },
+    "exploitation": {
+      "simulation_mode": true,
+      "safe_exploits": true
+    }
+  },
+  "assessment_id": "e9496584-d652-4038-aab9-e7d25f001603",
+  "created_at": "2025-09-22T08:10:30.500623",
+  "updated_at": "2025-09-22T08:10:30.500633"
+}

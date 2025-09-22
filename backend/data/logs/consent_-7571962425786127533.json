@@ -1,0 +1,14 @@
+{
+  "target": "scanme.nmap.org",
+  "validation_result": {
+    "valid": true,
+    "missing_fields": [],
+    "warnings": [
+      "Target ownership not confirmed - assessment may be unauthorized",
+      "Educational/public target assessment - proceeding with caution"
+    ],
+    "consent_id": "consent_scanme.nmap.org_20250922_073952"
+  },
+  "consent_details": {},
+  "timestamp": "2025-09-22T07:39:52.800383"
+}
