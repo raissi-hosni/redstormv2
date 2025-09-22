@@ -1,0 +1,11 @@
+{
+  "target": "example.com",
+  "validation_result": {
+    "valid": true,
+    "missing_fields": [],
+    "warnings": [],
+    "consent_id": "consent_example.com_20250922_071826"
+  },
+  "consent_details": {},
+  "timestamp": "2025-09-22T07:18:26.877726"
+}
