@@ -1,20 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, FileText, Filter, Calendar, Target, AlertCircle } from 'lucide-react';
-import { api } from '@/lib/api';
-import ReportViewer from '@/components/ReportViewer';
+import { Download, FileText, Calendar, Target, AlertCircle } from 'lucide-react';
+import ReportViewer from '../components/ReportViewer';
+
+interface Assessment {
+  assessment_id: string;
+  target: string;
+  status: string;
+  created_at: string;
+  phases?: string[];
+}
 
 export default function ReportsPage() {
-  const [assessments, setAssessments] = useState<any[]>([]);
-  const [selectedAssessment, setSelectedAssessment] = useState<any>(null);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
   const [vulnerabilities, setVulnerabilities] = useState<any[]>([]);
-  const [filters, setFilters] = useState({
-    severity: '',
-    target: '',
-    dateFrom: '',
-    dateTo: ''
-  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadAssessments();
@@ -22,58 +24,81 @@ export default function ReportsPage() {
 
   const loadAssessments = async () => {
     try {
-      const data = await api.getAssessments();
-      setAssessments(data.assessments);
-      if (data.assessments.length > 0) {
-        setSelectedAssessment(data.assessments[0]);
-        loadVulnerabilities(data.assessments[0].assessment_id);
+      setLoading(true);
+      // Mock data for demo - replace with actual API call
+      const mockAssessments: Assessment[] = [
+        {
+          assessment_id: 'assessment-123',
+          target: 'scanme.nmap.org',
+          status: 'completed',
+          created_at: new Date(Date.now() - 3600000).toISOString(),
+          phases: ['reconnaissance', 'scanning', 'vulnerability']
+        },
+        {
+          assessment_id: 'assessment-456',
+          target: 'example.com',
+          status: 'completed',
+          created_at: new Date(Date.now() - 7200000).toISOString(),
+          phases: ['reconnaissance', 'scanning']
+        }
+      ];
+      
+      setAssessments(mockAssessments);
+      if (mockAssessments.length > 0) {
+        setSelectedAssessment(mockAssessments[0]);
+        loadVulnerabilities(mockAssessments[0].assessment_id);
       }
     } catch (error) {
       console.error('Failed to load assessments:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const loadVulnerabilities = async (assessmentId: string) => {
     try {
-      const data = await api.getVulnerabilities(assessmentId, filters);
-      setVulnerabilities(data.findings);
+      // Mock vulnerabilities data - replace with actual API call
+      const mockVulnerabilities = [
+        {
+          id: 'vuln-1',
+          name: 'SSH Weak Configuration',
+          severity: 'high',
+          description: 'SSH service allows weak authentication methods',
+          affected_service: 'ssh',
+          port: 22,
+          discovered_at: new Date(Date.now() - 3500000).toISOString()
+        },
+        {
+          id: 'vuln-2',
+          name: 'Outdated Apache Version',
+          severity: 'medium',
+          description: 'Apache HTTP Server version has known vulnerabilities',
+          affected_service: 'http',
+          port: 80,
+          discovered_at: new Date(Date.now() - 3400000).toISOString()
+        }
+      ];
+      setVulnerabilities(mockVulnerabilities);
     } catch (error) {
       console.error('Failed to load vulnerabilities:', error);
     }
   };
 
-  const handleAssessmentSelect = (assessment: any) => {
+  const handleAssessmentSelect = (assessment: Assessment) => {
     setSelectedAssessment(assessment);
     loadVulnerabilities(assessment.assessment_id);
   };
 
-  const exportReport = async (format: 'pdf' | 'json' | 'csv') => {
-    if (!selectedAssessment) return;
-
-    try {
-      const reportData = {
-        assessment: selectedAssessment,
-        vulnerabilities: vulnerabilities,
-        generated_at: new Date().toISOString(),
-        format: format
-      };
-
-      // Create download link
-      const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `redstorm-report-${selectedAssessment.assessment_id}.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      console.log(`📄 Report exported as ${format}`);
-    } catch (error) {
-      console.error('Failed to export report:', error);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <FileText className="h-12 w-12 text-gray-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-gray-400">Loading assessments...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -83,23 +108,6 @@ export default function ReportsPage() {
           <div className="flex items-center space-x-4">
             <FileText className="h-8 w-8 text-blue-500" />
             <h1 className="text-2xl font-bold">Reports & Analytics</h1>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => exportReport('json')}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors flex items-center space-x-2"
-            >
-              <Download className="h-4 w-4" />
-              <span>Export JSON</span>
-            </button>
-            <button
-              onClick={() => exportReport('pdf')}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center space-x-2"
-            >
-              <Download className="h-4 w-4" />
-              <span>Export PDF</span>
-            </button>
           </div>
         </div>
       </header>
@@ -154,27 +162,6 @@ export default function ReportsPage() {
               ))}
             </div>
           </div>
-
-          {/* Quick Stats */}
-          {selectedAssessment && (
-            <div className="bg-gray-700 rounded-lg p-4">
-              <h3 className="text-lg font-semibold mb-3">Quick Stats</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Target</span>
-                  <span className="truncate">{selectedAssessment.target}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Status</span>
-                  <span>{selectedAssessment.status}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Duration</span>
-                  <span>~5.7s</span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Main Content */}

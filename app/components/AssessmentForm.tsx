@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Play, Settings, Clock, Shield, AlertTriangle } from 'lucide-react';
+import { Play, Settings, Clock, Shield, AlertTriangle,Target } from 'lucide-react';
 
 interface AssessmentFormProps {
   onSubmit: (target: string, options: any) => void;
