@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Play, Stop, Download, Activity, Shield, AlertTriangle } from 'lucide-react';
-import { WebSocketManager } from '@/lib/websocket';
-import { api } from '@/lib/api';
-import RealTimeMonitor from '@/components/RealTimeMonitor';
-import AssessmentForm from '@/components/AssessmentForm';
-import PhaseProgress from '@/components/PhaseProgress';
+import { Play, Square, Download, Activity, Shield, AlertTriangle } from 'lucide-react';
+import { WebSocketManager } from './lib/websocket';
+import { api } from './lib/api';
+import RealTimeMonitor from './components/RealTimeMonitor';
+import AssessmentForm from './components/AssessmentForm';
+import PhaseProgress from './components/PhaseProgress';
 
 export default function Dashboard() {
   const [isConnected, setIsConnected] = useState(false);
@@ -209,7 +209,7 @@ export default function Dashboard() {
                       onClick={stopAssessment}
                       className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center justify-center space-x-2"
                     >
-                      <Stop className="h-4 w-4" />
+                      <Square className="h-4 w-4" />
                       <span>Stop</span>
                     </button>
                   )}
