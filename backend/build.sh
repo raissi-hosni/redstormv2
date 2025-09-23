@@ -17,6 +17,11 @@ fi
 
 # Install requirements
 pip install -r requirements.txt
+cd tools
+# Build the tool
+go build -o redstorm-tools .
+mv redstorm-tools ../agents
+cd ..
 
 echo "Virtual environment setup complete!"
 echo "To activate: source redstorm-env/bin/activate"
