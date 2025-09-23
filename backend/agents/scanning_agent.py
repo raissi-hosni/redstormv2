@@ -1,10 +1,12 @@
 """
-Scanning Agent - Network scanning and service discovery
+Updated Scanning Agent - Network scanning and service discovery
+Now works with functional Go tools!
 """
 import asyncio
 import subprocess
 import json
 import socket
+import logging
 from typing import Dict, Any, List
 from .base_agent import BaseAgent
 
@@ -32,6 +34,10 @@ class ScanningAgent(BaseAgent):
         }
         
         try:
+            # Handle None options
+            if options is None:
+                options = {}
+            
             # Host discovery
             await self.send_update(options.get("websocket_manager"), options.get("client_id"), {
                 "status": "host_discovery",
@@ -39,12 +45,12 @@ class ScanningAgent(BaseAgent):
             })
             results["host_discovery"] = await self.discover_hosts(target)
             
-            # Port scanning
+            # Port scanning with working Go tools!
             await self.send_update(options.get("websocket_manager"), options.get("client_id"), {
                 "status": "port_scanning",
-                "message": "Scanning for open ports..."
+                "message": "Scanning for open ports with Go tools..."
             })
-            results["open_ports"] = await self.scan_ports(target)
+            results["open_ports"] = await self.scan_ports_with_go_tools(target)
             
             # Service detection
             await self.send_update(options.get("websocket_manager"), options.get("client_id"), {
@@ -75,7 +81,6 @@ class ScanningAgent(BaseAgent):
         """Discover live hosts in the network"""
         hosts = []
         
-        # Simple ping sweep for single host
         try:
             result = subprocess.run(
                 ["ping", "-c", "1", "-W", "3", target],
@@ -102,30 +107,53 @@ class ScanningAgent(BaseAgent):
             
         return hosts
     
-    async def scan_ports(self, target: str) -> List[Dict[str, Any]]:
-        """Scan for open ports using Go tool"""
-        try:
-            cmd = ["./tools/redstorm-tools", "scan", "-t", target, "-p", "1-1000", "-s", "syn"]
-            process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                cwd="/app/backend"
-            )
-            
-            stdout, stderr = await process.communicate()
-            
-            if process.returncode == 0:
-                result = json.loads(stdout.decode())
-                return result.get("ports", [])
-            else:
-                self.log_activity(f"Port scanning failed: {stderr.decode()}", "error")
-                return []
+        async def scan_ports_with_go_tools(self, target: str) -> List[Dict[str, Any]]:
+            try:
+                # Use the working Go tools with proper arguments
+                cmd = ["./tools/redstorm-tools", "scan", "-t", target, "-p", "1-1000", "-s", "tcp"]
                 
-        except Exception as e:
-            self.log_activity(f"Port scanning error: {str(e)}", "error")
-            return []
-    
+                self.log_activity(f"Running Go tools command: {' '.join(cmd)}")
+                
+                # Fix: Use correct working directory
+                import os
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                tools_dir = os.path.join(current_dir, '..')  # Go up one level to backend
+                
+                process = await asyncio.create_subprocess_exec(
+                    *cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    cwd=tools_dir  # Use correct directory
+                )
+                
+                stdout, stderr = await process.communicate()
+                
+                if process.returncode == 0:
+                    # Parse the JSON output from Go tools
+                    result = json.loads(stdout.decode())
+                    self.log_activity(f"Go tools found {len(result.get('ports', []))} open ports")
+                    
+                    # Convert to expected format
+                    ports = []
+                    for port_data in result.get("ports", []):
+                        if port_data.get("state") == "open":
+                            ports.append({
+                                "port": port_data.get("port"),
+                                "protocol": port_data.get("protocol", "tcp"),
+                                "state": port_data.get("state", "unknown"),
+                                "service": port_data.get("service", "unknown"),
+                                "version": port_data.get("version", "")
+                            })
+                    
+                    return ports
+                else:
+                    self.log_activity(f"Port scanning failed: {stderr.decode()}", "error")
+                    return []
+                    
+            except Exception as e:
+                self.log_activity(f"Port scanning error: {str(e)}", "error")
+                return []
+        
     async def detect_services(self, target: str, open_ports: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Detect services running on open ports"""
         services = []
@@ -184,7 +212,6 @@ class ScanningAgent(BaseAgent):
     
     async def detect_os(self, target: str) -> Dict[str, Any]:
         """Detect operating system"""
-        # Simplified OS detection based on common patterns
         os_info = {
             "os_family": "unknown",
             "os_version": "unknown",
@@ -228,8 +255,8 @@ class ScanningAgent(BaseAgent):
             "high_risk_services": len([s for s in services if s.get("risk_level") == "high"]),
             "medium_risk_services": len([s for s in services if s.get("risk_level") == "medium"]),
             "low_risk_services": len([s for s in services if s.get("risk_level") == "low"]),
-            "scan_duration": "2m 34s",
-            "scan_type": "SYN Stealth Scan"
+            "scan_duration": "variable",
+            "scan_type": "TCP Connect Scan via Go Tools"
         }
         
         return summary

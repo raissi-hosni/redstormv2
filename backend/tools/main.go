@@ -28,6 +28,7 @@ func main() {
         scanner.NewScanCommand(),
         recon.NewReconCommand(),
         recon.NewAmassCommand(),
+        recon.NewWhoisCommand(),
         enumeration.NewEnumCommand(),
         vulnerability.NewVulnCommand(),
         exploitation.NewExploitCommand(),
